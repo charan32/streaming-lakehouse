@@ -1,0 +1,41 @@
+product_id,product_name,category,list_price
+P001,Smart Headphones,electronics,35.63
+P002,Compact Speaker,electronics,129.08
+P003,Eco Charger,electronics,338.00
+P004,Smart Keyboard,electronics,275.96
+P005,Classic Monitor Arm,electronics,37.66
+P006,Pro Webcam,electronics,123.88
+P007,Classic Earbuds,electronics,263.53
+P008,Premium Power Bank,electronics,118.69
+P009,Compact Mug Set,home,147.22
+P010,Classic Lamp,home,138.51
+P011,Eco Throw Blanket,home,128.08
+P012,Everyday Cutting Board,home,55.79
+P013,Pro Plant Pot,home,172.64
+P014,Everyday Candle,home,25.58
+P015,Premium Organizer,home,24.64
+P016,Everyday Kettle,home,111.84
+P017,Classic Hoodie,apparel,90.81
+P018,Smart Tee,apparel,117.10
+P019,Premium Rain Jacket,apparel,20.51
+P020,Compact Socks Pack,apparel,101.58
+P021,Everyday Cap,apparel,74.35
+P022,Smart Joggers,apparel,16.95
+P023,Pro Polo,apparel,95.49
+P024,Smart Scarf,apparel,104.37
+P025,Smart Face Wash,beauty,32.23
+P026,Travel Serum,beauty,49.86
+P027,Everyday Lip Balm,beauty,17.22
+P028,Everyday Sunscreen,beauty,20.46
+P029,Compact Shampoo,beauty,54.43
+P030,Smart Hand Cream,beauty,48.03
+P031,Eco Toner,beauty,42.86
+P032,Pro Body Lotion,beauty,17.27
+P033,Premium Yoga Mat,sports,66.69
+P034,Pro Water Bottle,sports,153.77
+P035,Classic Resistance Bands,sports,58.10
+P036,Classic Running Belt,sports,179.06
+P037,Premium Gym Bag,sports,66.23
+P038,Pro Jump Rope,sports,201.76
+P039,Everyday Foam Roller,sports,54.65
+P040,Travel Dumbbell Set,sports,93.08

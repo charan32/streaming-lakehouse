@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: dim_products
+    description: Product catalog (seeded reference data).
+    columns:
+      - name: product_id
+        tests: [unique, not_null]
+
+  - name: dim_customers
+    description: One row per shopper with activity, orders, revenue and a simple segment.
+    columns:
+      - name: user_id
+        tests: [unique, not_null]
+      - name: segment
+        tests:
+          - accepted_values:
+              values: [loyal, customer, browser]
+
+  - name: fct_orders
+    description: One row per order with the result of its latest payment attempt.
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: user_id
+        tests:
+          - relationships:
+              to: ref('dim_customers')
+              field: user_id
+
+  - name: fct_order_items
+    description: One row per product line in an order.
+
+  - name: fct_sessions
+    description: One row per session with purchase-funnel flags.
+    columns:
+      - name: session_id
+        tests: [unique, not_null]
+
+  - name: fct_daily_kpis
+    description: Daily sessions, orders, revenue, average order value and funnel rates.
+    columns:
+      - name: day
+        tests: [unique, not_null]

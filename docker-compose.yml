@@ -1,0 +1,104 @@
+# Full streaming stack:  docker compose up -d --build
+#   Redpanda Console  http://localhost:8080   (topics, messages, consumer lag)
+#   Airflow           http://localhost:8081   (user admin, password: see README)
+
+x-lakehouse-env: &lakehouse-env
+  LAKEHOUSE_MODE: docker
+  KAFKA_BOOTSTRAP: redpanda:9092
+  PYICEBERG_CATALOG__LAKEHOUSE__TYPE: sql
+  PYICEBERG_CATALOG__LAKEHOUSE__URI: postgresql+psycopg2://lakehouse:lakehouse@postgres:5432/iceberg_catalog
+  PYICEBERG_CATALOG__LAKEHOUSE__WAREHOUSE: file:///warehouse
+
+services:
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.27
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:19092
+    ports: ["19092:19092"]
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "health", "--exit-when-healthy"]
+      interval: 5s
+      retries: 20
+
+  topics:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.27
+    depends_on: { redpanda: { condition: service_healthy } }
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >
+        rpk topic create events.raw --partitions 3 -X brokers=redpanda:9092 || true;
+        rpk topic create events.dlq --partitions 1 -X brokers=redpanda:9092 || true
+    restart: "no"
+
+  console:
+    image: docker.redpanda.com/redpandadata/console:v2.8.17
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports: ["8080:8080"]
+    depends_on: { redpanda: { condition: service_healthy } }
+
+  postgres:
+    # Holds the Iceberg catalog: which metadata file is current for each table.
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lakehouse
+      POSTGRES_PASSWORD: lakehouse   # local development only
+      POSTGRES_DB: iceberg_catalog
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lakehouse -d iceberg_catalog"]
+      interval: 5s
+      retries: 20
+
+  producer:
+    build: .
+    command: ["python", "-m", "lakehouse.produce", "--rate", "25"]
+    environment: *lakehouse-env
+    depends_on:
+      topics: { condition: service_completed_successfully }
+    restart: unless-stopped
+
+  ingestor:
+    build: .
+    command: ["python", "-m", "lakehouse.consume", "--max-batch", "2000", "--max-wait", "10"]
+    environment: *lakehouse-env
+    volumes: [warehouse:/warehouse]
+    depends_on:
+      topics: { condition: service_completed_successfully }
+      postgres: { condition: service_healthy }
+    restart: unless-stopped
+
+  airflow:
+    build:
+      context: .
+      dockerfile: docker/airflow.Dockerfile
+    command: standalone
+    environment:
+      <<: *lakehouse-env
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+      LAKEHOUSE_HOME: /opt/lakehouse
+      LAKEHOUSE_PYTHON: /opt/airflow/lakehouse-venv/bin/python
+      DBT_BIN: /opt/airflow/lakehouse-venv/bin/dbt
+      DBT_DUCKDB_PATH: /opt/airflow/warehouse-gold/lakehouse.duckdb
+      DBT_TARGET_PATH: /opt/airflow/dbt-target
+      DBT_LOG_PATH: /opt/airflow/dbt-logs
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./dbt:/opt/lakehouse/dbt
+      - ./lakehouse:/opt/lakehouse/lakehouse
+      - warehouse:/warehouse
+      - gold:/opt/airflow/warehouse-gold
+    ports: ["8081:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  warehouse:   # Iceberg data and metadata files (swap for s3:// in the cloud)
+  gold:        # DuckDB file with the silver, gold and monitoring layers

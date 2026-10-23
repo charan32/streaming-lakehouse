@@ -1,0 +1,18 @@
+# dbt reads the Iceberg bronze tables through dbt-duckdb's iceberg plugin.
+# The catalog itself is configured by PYICEBERG_CATALOG__LAKEHOUSE__* environment
+# variables, the same ones the Python ingestor uses (see lakehouse/settings.py).
+lakehouse:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'target/lakehouse.duckdb') }}"
+      # One thread: the iceberg plugin loads each source on first use, and parallel
+      # threads would race to load the same source table into DuckDB.
+      threads: 1
+      settings:
+        TimeZone: UTC   # day boundaries in UTC, whatever the machine's timezone
+      plugins:
+        - module: iceberg
+          config:
+            catalog: lakehouse

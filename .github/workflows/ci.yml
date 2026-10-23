@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Tests and local pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - name: Unit and integration tests
+        run: python -m pytest -q
+      - name: Full pipeline in local mode (generate -> Iceberg -> dbt build -> health)
+        run: make local
+      - name: Report
+        run: python -m lakehouse.report
+
+  docker:
+    name: Streaming stack end to end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images
+        run: docker compose build
+      - name: Start Kafka, catalog, producer and ingestor
+        run: docker compose up -d redpanda topics postgres producer ingestor
+      - name: Wait for the ingestor to commit batches to Iceberg
+        run: |
+          for i in $(seq 1 30); do
+            if docker compose logs ingestor | grep -q "batch committed"; then
+              docker compose logs ingestor | grep "batch committed" | tail -3
+              exit 0
+            fi
+            sleep 5
+          done
+          docker compose logs
+          exit 1
+      - name: Run the dbt build and contract check the Airflow DAG runs
+        run: |
+          docker compose run --rm --no-deps --entrypoint bash airflow -c '
+            mkdir -p $(dirname $DBT_DUCKDB_PATH) &&
+            cd /opt/lakehouse/dbt && $DBT_BIN build --profiles-dir . &&
+            cd /opt/lakehouse && $LAKEHOUSE_PYTHON -m lakehouse.health &&
+            $LAKEHOUSE_PYTHON -m lakehouse.report'
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail 200
+      - name: Stop
+        if: always()
+        run: docker compose down -v

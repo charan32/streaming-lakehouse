@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/charan32/streaming-lakehouse/contracts/page_view.v1.json",
+  "title": "page_view v1",
+  "description": "A shopper viewed a page.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "event_ts",
+    "user_id",
+    "session_id",
+    "schema_version",
+    "payload"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f-]{36}$",
+      "description": "Unique ID; used to remove duplicates downstream."
+    },
+    "event_type": {
+      "const": "page_view"
+    },
+    "event_ts": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$",
+      "description": "When the event happened, UTC, ISO 8601."
+    },
+    "user_id": {
+      "type": "string",
+      "pattern": "^U\\d{4}$"
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "page"
+      ],
+      "properties": {
+        "page": {
+          "enum": [
+            "home",
+            "category",
+            "product",
+            "cart",
+            "checkout"
+          ]
+        },
+        "product_id": {
+          "type": "string",
+          "pattern": "^P\\d{3}$"
+        }
+      }
+    }
+  }
+}

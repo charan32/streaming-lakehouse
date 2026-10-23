@@ -1,0 +1,7 @@
+version: 2
+
+models:
+  - name: contract_rejections
+    description: Rejected events per day, event type and failing field, with an example error.
+  - name: pipeline_health
+    description: Per ingestion day - bronze rows, duplicates removed, reject rate, freshness and late events.

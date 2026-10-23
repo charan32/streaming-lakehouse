@@ -1,0 +1,33 @@
+name: ecommerce_lakehouse
+version: "1.0.0"
+config-version: 2
+profile: lakehouse
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: target
+clean-targets: [target, dbt_packages]
+
+models:
+  ecommerce_lakehouse:
+    staging:
+      +materialized: view
+      +schema: silver
+    marts:
+      +materialized: table
+      +schema: gold
+    monitoring:
+      +materialized: table
+      +schema: monitoring
+
+seeds:
+  ecommerce_lakehouse:
+    +schema: reference
+    products:
+      +column_types:
+        product_id: varchar
+        product_name: varchar
+        category: varchar
+        list_price: decimal(10,2)

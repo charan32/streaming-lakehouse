@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Raw events written by the Kafka ingestor. Iceberg tables, read through PyIceberg.
+    schema: bronze
+    meta:
+      plugin: iceberg
+    tables:
+      - name: events
+        description: Every event that passed its data contract. May contain duplicates (at-least-once delivery).
+        meta:
+          iceberg_table: bronze.events
+      - name: events_rejected
+        description: Events that broke their data contract, with the reasons.
+        meta:
+          iceberg_table: bronze.events_rejected
