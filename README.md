@@ -1,5 +1,7 @@
 # Streaming Lakehouse
 
+![Streaming Lakehouse: Kafka, data contracts, Iceberg, dbt, Airflow](docs/social-preview.png)
+
 [![CI](https://github.com/charan32/streaming-lakehouse/actions/workflows/ci.yml/badge.svg)](https://github.com/charan32/streaming-lakehouse/actions/workflows/ci.yml)
 
 A real-time e-commerce lakehouse you can run on a laptop. Clickstream, cart, order and payment events stream through **Kafka**, are checked against **data contracts**, land in **Apache Iceberg** tables, and are modeled by **dbt** into business-ready tables on a schedule run by **Airflow**.
